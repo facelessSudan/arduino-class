@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arduino UNO — Label the Parts</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --board: #1a7a5e;
+  --board-dark: #0f5c40;
+  --board-edge: #065A82;
+  --pin-digital: #0a3d2b;
+  --pin-analog: #1a3060;
+  --pin-power: #082820;
+  --blue: #065A82;
+  --teal: #1C7293;
+  --gold: #f59e0b;
+  --green: #22c55e;
+  --red: #ef4444;
+  --text: #1a1a2e;
+  --bg: #f0f7ff;
+  --card: #ffffff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+header {
+  background: linear-gradient(135deg, var(--blue) 0%, var(--teal) 100%);
+  color: white; padding: 18px 24px;
+  display: flex; align-items: center; gap: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+.logo { background: white; color: var(--blue); font-family: 'Share Tech Mono', monospace; font-size: 14px; font-weight: 900; padding: 8px 12px; border-radius: 8px; }
+header h1 { font-size: 20px; font-weight: 900; }
+header p { font-size: 13px; opacity: 0.85; margin-top: 2px; }
+.score-pill { margin-left: auto; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); border-radius: 50px; padding: 8px 20px; text-align: center; }
+.score-pill .num { font-family: 'Share Tech Mono', monospace; font-size: 26px; font-weight: 700; }
+.score-pill .lbl { font-size: 10px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
+
+main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 60px; }
+
+/* WORD BANK */
+.word-bank-wrap { background: white; border: 2px solid var(--gold); border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(245,158,11,0.1); }
+.wb-title { font-size: 12px; font-weight: 800; color: var(--gold); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  background: #fff8e7; border: 2px solid var(--gold);
+  color: #7d5a00; padding: 6px 14px; border-radius: 50px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: all 0.2s; user-select: none;
+}
+.chip:hover:not(.used) { background: var(--gold); color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(245,158,11,0.3); }
+.chip.selected { background: var(--gold); color: white; box-shadow: 0 4px 12px rgba(245,158,11,0.4); }
+.chip.used { opacity: 0.3; pointer-events: none; text-decoration: line-through; }
+
+/* BOARD + LABELS LAYOUT */
+.game-area { display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: center; margin-bottom: 28px; }
+
+/* LABELS LEFT */
+.labels-left, .labels-right { display: flex; flex-direction: column; gap: 10px; }
+.label-slot {
+  display: flex; align-items: center; gap: 8px;
+  background: white; border: 2px solid #dde8f0;
+  border-radius: 10px; padding: 8px 12px;
+  cursor: pointer; transition: all 0.2s;
+  min-height: 52px;
+}
+.label-slot:hover:not(.correct):not(.wrong) { border-color: var(--blue); background: #f0f7ff; }
+.label-slot.correct { border-color: var(--green); background: #f0fff4; }
+.label-slot.wrong { border-color: var(--red); background: #fff5f5; }
+.slot-letter {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--gold); color: white;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.label-slot.correct .slot-letter { background: var(--green); }
+.label-slot.wrong .slot-letter { background: var(--red); }
+.slot-content { flex: 1; }
+.slot-hint { font-size: 10px; color: #888; font-style: italic; line-height: 1.3; }
+.slot-answer { font-size: 13px; font-weight: 700; color: var(--blue); min-height: 18px; margin-top: 2px; }
+.label-slot.correct .slot-answer { color: #166534; }
+.label-slot.wrong .slot-answer { color: #991b1b; }
+
+/* ARDUINO BOARD SVG */
+.board-wrap { position: relative; }
+.board-svg { width: 340px; filter: drop-shadow(0 8px 24px rgba(0,0,0,0.25)); }
+
+/* BUTTONS */
+.btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+.btn {
+  background: var(--blue); color: white; border: none;
+  border-radius: 10px; padding: 12px 32px;
+  font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 800;
+  cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(6,90,130,0.3);
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(6,90,130,0.4); }
+.btn.secondary { background: white; color: var(--teal); border: 2px solid var(--teal); box-shadow: none; }
+.btn.secondary:hover { background: var(--teal); color: white; }
+
+/* RESULT */
+.result { display: none; background: white; border: 2px solid var(--blue); border-radius: 16px; padding: 28px; text-align: center; margin-top: 20px; }
+.result.show { display: block; animation: popIn 0.4s ease; }
+@keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.result-score { font-family: 'Share Tech Mono', monospace; font-size: 56px; color: var(--blue); margin: 8px 0; }
+.result-msg { font-size: 18px; font-weight: 800; margin-top: 8px; }
+
+/* BONUS */
+.bonus-section { background: white; border: 2px solid var(--green); border-radius: 14px; padding: 20px 24px; margin-top: 24px; }
+.bonus-title { font-size: 14px; font-weight: 800; color: #0a5c2e; margin-bottom: 14px; }
+.bonus-q { margin-bottom: 16px; }
+.bonus-q label { display: block; font-size: 14px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
+.bonus-q textarea {
+  width: 100%; background: #f8fffe; border: 2px solid #bbf7d0;
+  border-radius: 10px; padding: 10px 14px; font-family: 'Nunito', sans-serif;
+  font-size: 13px; resize: vertical; min-height: 60px; outline: none;
+  transition: border-color 0.2s;
+}
+.bonus-q textarea:focus { border-color: var(--green); }
+
+@media (max-width: 700px) {
+  .game-area { grid-template-columns: 1fr; }
+  .board-svg { width: 100%; max-width: 340px; }
+  .labels-right { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">UNO</div>
+  <div>
+    <h1>Arduino UNO R3 — Label the Parts</h1>
+    <p>Click a word from the Word Bank, then click the correct label slot</p>
+  </div>
+  <div class="score-pill">
+    <div class="num" id="scoreNum">0</div>
+    <div class="lbl">Score</div>
+  </div>
+</header>
+
+<main>
+  <!-- WORD BANK -->
+  <div class="word-bank-wrap">
+    <div class="wb-title">⚡ Word Bank — Click a word to select it, then click a label slot</div>
+    <div class="chips" id="wordBank"></div>
+  </div>
+
+  <!-- GAME AREA -->
+  <div class="game-area">
+    <!-- LEFT LABELS -->
+    <div class="labels-left" id="labelsLeft"></div>
+
+    <!-- BOARD -->
+    <div class="board-wrap">
+      <svg class="board-svg" viewBox="0 0 340 480" xmlns="http://www.w3.org/2000/svg">
+        <!-- Board body -->
+        <rect x="10" y="10" width="320" height="460" rx="12" fill="#1a7a5e" stroke="#0a5c40" stroke-width="3"/>
+
+        <!-- Digital pin header top -->
+        <rect x="30" y="14" width="240" height="22" rx="4" fill="#0a3d2b"/>
+        <text x="150" y="29" fill="#90ee90" font-size="9" font-family="Share Tech Mono" text-anchor="middle">DIGITAL PINS (PWM = ~)</text>
+        <!-- Digital pin dots -->
+        <g fill="#c0c0c0">
+          <circle cx="44" cy="44" r="4"/><text x="44" y="62" fill="#90ee90" font-size="7" font-family="Share Tech Mono" text-anchor="middle">0</text>
+          <circle cx="61" cy="44" r="4"/><text x="61" y="62" fill="#90ee90" font-size="7" font-family="Share Tech Mono" text-anchor="middle">1</text>
+          <circle cx="78" cy="44" r="4"/><text x="78" y="62" fill="#90ee90" font-size="7" font-family="Share Tech Mono" text-anchor="middle">2</text>
+          <circle cx="95" cy="44" r="4"/><text x="95" y="62" fill="#90ee90" font-size="7" font-family="Share Tech Mono" text-anchor="middle">3~</text>
+          <circle cx="112" cy="44" r="4"/><text x="112" y="62" fill="#90ee90" font-size="7" font-family="Share Tech Mono" text-anchor="middle">4</text>
+          <circle cx="129" cy="44" r="4"/><text x="129" y="62" fill="#90ee90" font-size="7" font-family="Share Tech Mono" text-anchor="middle">5~</text>
+          <circle cx="146" cy="44" r="4"/><text x="146" y="62" fill="#90ee90" font-size="7" font-family="Share Tech Mono" text-anchor="middle">6~</text>
+          <circle cx="163" cy="44" r="4"/><text x="163" y="62" fill="#90ee90" font-size="7" font-family="Share Tech Mono" text-anchor="middle">7</text>
+          <circle cx="180" cy="44" r="4"/><text x="180" y="62" fill="#90ee90" font-size="7" font-family="Share Tech Mono" text-anchor="middle">8</text>
+          <circle cx="197" cy="44" r="4"/><text x="197" y="62" fill="#90ee90" font-size="7" font-family="Share Tech Mono" text-anchor="middle">9~</text>
+          <circle cx="214" cy="44" r="4"/><text x="214" y="62" fill="#90ee90" font-size="7" font-family="Share Tech Mono" text-anchor="middle">10~</text>
+          <circle cx="231" cy="44" r="4"/><text x="231" y="62" fill="#90ee90" font-size="7" font-family="Share Tech Mono" text-anchor="middle">11~</text>
+          <circle cx="248" cy="44" r="4"/><text x="248" y="62" fill="#90ee90" font-size="7" font-family="Share Tech Mono" text-anchor="middle">12</text>
+          <circle cx="265" cy="44" r="4"/><text x="265" y="62" fill="#90ee90" font-size="7" font-family="Share Tech Mono" text-anchor="middle">13</text>
+        </g>
+
+        <!-- Power Jack [A] -->
+        <rect x="14" y="80" width="36" height="28" rx="6" fill="#555" stroke="#888" stroke-width="1"/>
+        <circle cx="32" cy="94" r="8" fill="#333"/>
+        <circle cx="32" cy="94" r="3" fill="#888"/>
+        <text x="32" y="120" fill="#ffd700" font-size="11" font-family="Share Tech Mono" text-anchor="middle" font-weight="bold">[A]</text>
+
+        <!-- Voltage Regulator [B] -->
+        <rect x="72" y="82" width="18" height="22" rx="2" fill="#222"/>
+        <text x="81" y="120" fill="#ffd700" font-size="11" font-family="Share Tech Mono" text-anchor="middle" font-weight="bold">[B]</text>
+
+        <!-- Crystal [C] -->
+        <rect x="118" y="84" width="10" height="18" rx="3" fill="#aaa" stroke="#888" stroke-width="1"/>
+        <text x="123" y="120" fill="#ffd700" font-size="11" font-family="Share Tech Mono" text-anchor="middle" font-weight="bold">[C]</text>
+
+        <!-- Reset Button [D] -->
+        <circle cx="295" cy="92" r="9" fill="#cc3333" stroke="#aa0000" stroke-width="1.5"/>
+        <text x="295" y="120" fill="#ffd700" font-size="11" font-family="Share Tech Mono" text-anchor="middle" font-weight="bold">[D]</text>
+
+        <!-- USB Chip ATmega16U2 [E] -->
+        <rect x="248" y="130" width="32" height="24" rx="2" fill="#111" stroke="#444" stroke-width="1"/>
+        <text x="264" y="168" fill="#ffd700" font-size="11" font-family="Share Tech Mono" text-anchor="middle" font-weight="bold">[E]</text>
+
+        <!-- ATmega328P Brain [F] -->
+        <rect x="100" y="190" width="60" height="60" rx="3" fill="#111" stroke="#444" stroke-width="1.5"/>
+        <text x="130" y="215" fill="#555" font-size="7" font-family="Share Tech Mono" text-anchor="middle">ATmega</text>
+        <text x="130" y="225" fill="#555" font-size="7" font-family="Share Tech Mono" text-anchor="middle">328P</text>
+        <text x="130" y="265" fill="#ffd700" font-size="11" font-family="Share Tech Mono" text-anchor="middle" font-weight="bold">[F]</text>
+
+        <!-- TX/RX LEDs [G] -->
+        <circle cx="220" cy="310" r="4" fill="#ff6666" opacity="0.9"/>
+        <circle cx="234" cy="310" r="4" fill="#ff6666" opacity="0.9"/>
+        <text x="227" y="330" fill="#ffd700" font-size="11" font-family="Share Tech Mono" text-anchor="middle" font-weight="bold">[G]</text>
+
+        <!-- USB-B Port [H] -->
+        <rect x="250" y="285" width="48" height="40" rx="3" fill="#888" stroke="#666" stroke-width="1.5"/>
+        <rect x="254" y="289" width="40" height="32" rx="2" fill="#555"/>
+        <text x="274" y="342" fill="#ffd700" font-size="11" font-family="Share Tech Mono" text-anchor="middle" font-weight="bold">[H]</text>
+
+        <!-- Digital pin label area -->
+        <text x="130" y="178" fill="#ffd700" font-size="11" font-family="Share Tech Mono" text-anchor="middle" font-weight="bold">[I]</text>
+        <text x="130" y="188" fill="#90ee90" font-size="7" font-family="Share Tech Mono" text-anchor="middle">↑ DIGITAL PINS</text>
+
+        <!-- Arduino text -->
+        <text x="60" y="360" fill="rgba(255,255,255,0.15)" font-size="28" font-family="Nunito" font-weight="900">ARDUINO</text>
+        <text x="90" y="385" fill="rgba(255,255,255,0.1)" font-size="20" font-family="Nunito" font-weight="900">UNO R3</text>
+
+        <!-- Analog pin dots bottom -->
+        <rect x="14" y="420" width="160" height="22" rx="4" fill="#1a3060"/>
+        <text x="94" y="435" fill="#b0c8ff" font-size="8" font-family="Share Tech Mono" text-anchor="middle">ANALOG IN</text>
+        <g fill="#b0c8ff">
+          <circle cx="30" cy="415" r="4"/><text x="30" y="412" fill="#b0c8ff" font-size="7" font-family="Share Tech Mono" text-anchor="middle">A0</text>
+          <circle cx="47" cy="415" r="4"/><text x="47" y="412" fill="#b0c8ff" font-size="7" font-family="Share Tech Mono" text-anchor="middle">A1</text>
+          <circle cx="64" cy="415" r="4"/><text x="64" y="412" fill="#b0c8ff" font-size="7" font-family="Share Tech Mono" text-anchor="middle">A2</text>
+          <circle cx="81" cy="415" r="4"/><text x="81" y="412" fill="#b0c8ff" font-size="7" font-family="Share Tech Mono" text-anchor="middle">A3</text>
+          <circle cx="98" cy="415" r="4"/><text x="98" y="412" fill="#b0c8ff" font-size="7" font-family="Share Tech Mono" text-anchor="middle">A4</text>
+          <circle cx="115" cy="415" r="4"/><text x="115" y="412" fill="#b0c8ff" font-size="7" font-family="Share Tech Mono" text-anchor="middle">A5</text>
+        </g>
+        <text x="65" y="462" fill="#ffd700" font-size="11" font-family="Share Tech Mono" text-anchor="middle" font-weight="bold">[J]</text>
+
+        <!-- Power pins -->
+        <rect x="14" y="445" width="220" height="16" rx="4" fill="#082820"/>
+        <text x="124" y="456" fill="#90ee90" font-size="7" font-family="Share Tech Mono" text-anchor="middle">POWER PINS: IOREF  RESET  3.3V  5V  GND  GND  Vin</text>
+      </svg>
+    </div>
+
+    <!-- RIGHT LABELS -->
+    <div class="labels-right" id="labelsRight"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn" onclick="checkAll()">✅ CHECK ALL ANSWERS</button>
+    <button class="btn secondary" onclick="resetAll()">🔄 RESET</button>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result" id="result">
+    <div style="font-size:14px;color:#888;text-transform:uppercase;letter-spacing:1px;">Your Score</div>
+    <div class="result-score" id="resultScore">—</div>
+    <div class="result-msg" id="resultMsg"></div>
+    <p style="color:#888;font-size:13px;margin-top:8px;">Show this screen to your teacher! 🎉</p>
+  </div>
+
+  <!-- BONUS -->
+  <div class="bonus-section">
+    <div class="bonus-title">⭐ BONUS QUESTIONS — Write your answers below</div>
+    <div class="bonus-q">
+      <label>1. Which part is the 'brain' of the Arduino? What does it do?</label>
+      <textarea id="b1" placeholder="Write your answer here..."></textarea>
+    </div>
+    <div class="bonus-q">
+      <label>2. Why must every circuit connect to GND?</label>
+      <textarea id="b2" placeholder="Write your answer here..."></textarea>
+    </div>
+    <div class="bonus-q">
+      <label>3. What is the difference between a Digital Pin and an Analog Pin?</label>
+      <textarea id="b3" placeholder="Write your answer here..."></textarea>
+    </div>
+    <div class="btn-row" style="justify-content:flex-start;margin-top:12px;">
+      <button class="btn" onclick="submitBonus()" style="padding:10px 24px;font-size:13px;">Submit Bonus Answers</button>
+    </div>
+    <div id="bonusFeedback" style="display:none;margin-top:12px;padding:12px 16px;background:#f0fff4;border:1px solid #22c55e;border-radius:10px;color:#166534;font-size:13px;font-weight:700;">
+      ✅ Bonus answers submitted! Show your teacher for checking.
+    </div>
+  </div>
+</main>
+
+<script>
+const parts = [
+  { letter:"A", hint:"Round socket, top-left corner", answer:"Power Jack (Barrel Jack)", side:"left" },
+  { letter:"B", hint:"Converts higher voltage down to 5V", answer:"Voltage Regulator", side:"left" },
+  { letter:"C", hint:"Small silver capsule — the clock", answer:"16MHz Crystal Oscillator", side:"left" },
+  { letter:"D", hint:"Small push button, restarts program", answer:"Reset Button", side:"left" },
+  { letter:"E", hint:"Handles USB communication", answer:"ATmega16U2 (USB Chip)", side:"left" },
+  { letter:"F", hint:"Large black chip in the middle", answer:"ATmega328P (Microcontroller)", side:"right" },
+  { letter:"G", hint:"Blink when uploading code", answer:"TX/RX LEDs", side:"right" },
+  { letter:"H", hint:"Square port, connects to computer", answer:"USB-B Port", side:"right" },
+  { letter:"I", hint:"Pins 0–13, ON/OFF control", answer:"Digital Pins (0–13)", side:"right" },
+  { letter:"J", hint:"A0–A5, read sensor values", answer:"Analog Pins (A0–A5)", side:"right" },
+];
+
+const wordBank = [
+  "ATmega328P (Microcontroller)",
+  "USB-B Port",
+  "Reset Button",
+  "Digital Pins (0–13)",
+  "GND (Ground)",
+  "5V Pin",
+  "Analog Pins (A0–A5)",
+  "16MHz Crystal Oscillator",
+  "Voltage Regulator",
+  "TX/RX LEDs",
+  "Power Jack (Barrel Jack)",
+  "ATmega16U2 (USB Chip)",
+];
+
+let selectedWord = null;
+let answers = {};
+let score = 0;
+
+// Build word bank
+function buildWordBank() {
+  const wb = document.getElementById('wordBank');
+  wb.innerHTML = '';
+  wordBank.forEach(w => {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.textContent = w;
+    chip.dataset.word = w;
+    chip.addEventListener('click', () => selectWord(chip));
+    wb.appendChild(chip);
+  });
+}
+
+function selectWord(chip) {
+  if (chip.classList.contains('used')) return;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  selectedWord = chip.dataset.word;
+  chip.classList.add('selected');
+}
+
+// Build label slots
+function buildSlots() {
+  const left = document.getElementById('labelsLeft');
+  const right = document.getElementById('labelsRight');
+  left.innerHTML = ''; right.innerHTML = '';
+
+  parts.forEach(p => {
+    const slot = document.createElement('div');
+    slot.className = 'label-slot';
+    slot.id = `slot-${p.letter}`;
+    slot.innerHTML = `
+      <div class="slot-letter">${p.letter}</div>
+      <div class="slot-content">
+        <div class="slot-hint">${p.hint}</div>
+        <div class="slot-answer" id="ans-${p.letter}"></div>
+      </div>`;
+    slot.addEventListener('click', () => fillSlot(p.letter));
+    if (p.side === 'left') left.appendChild(slot);
+    else right.appendChild(slot);
+  });
+}
+
+function fillSlot(letter) {
+  if (!selectedWord) { alert('First click a word from the Word Bank!'); return; }
+  const slot = document.getElementById(`slot-${letter}`);
+  if (slot.classList.contains('correct')) return;
+
+  // Un-use previous word in this slot
+  if (answers[letter]) {
+    document.querySelectorAll('.chip').forEach(c => {
+      if (c.dataset.word === answers[letter]) { c.classList.remove('used'); }
+    });
+  }
+
+  // Mark selected chip as used
+  document.querySelectorAll('.chip').forEach(c => {
+    if (c.dataset.word === selectedWord) { c.classList.add('used'); c.classList.remove('selected'); }
+  });
+
+  answers[letter] = selectedWord;
+  document.getElementById(`ans-${letter}`).textContent = selectedWord;
+  slot.classList.remove('correct','wrong');
+  selectedWord = null;
+  updateScore();
+}
+
+function checkAll() {
+  let correct = 0;
+  parts.forEach(p => {
+    const slot = document.getElementById(`slot-${p.letter}`);
+    const userAnswer = answers[p.letter] || '';
+    slot.classList.remove('correct','wrong');
+    if (userAnswer === p.answer) { slot.classList.add('correct'); correct++; }
+    else if (userAnswer) { slot.classList.add('wrong'); }
+  });
+  score = correct;
+  document.getElementById('scoreNum').textContent = correct;
+  showResult(correct);
+}
+
+function updateScore() {
+  let c = 0;
+  parts.forEach(p => { if (answers[p.letter] === p.answer) c++; });
+  document.getElementById('scoreNum').textContent = c;
+}
+
+function showResult(correct) {
+  const total = parts.length;
+  const pct = Math.round(correct/total*100);
+  const r = document.getElementById('result');
+  document.getElementById('resultScore').textContent = `${correct} / ${total}`;
+  const msg = pct === 100 ? '🌟 PERFECT! You know every part!' :
+               pct >= 80 ? '🎉 Excellent work! Almost perfect!' :
+               pct >= 60 ? '👍 Good job! Review the ones you missed.' :
+               '💪 Keep studying the diagram — you can do it!';
+  document.getElementById('resultMsg').textContent = msg;
+  document.getElementById('resultMsg').style.color = pct >= 80 ? '#166534' : pct >= 60 ? '#7d5a00' : '#991b1b';
+  r.classList.add('show');
+  r.scrollIntoView({ behavior:'smooth' });
+}
+
+function resetAll() {
+  answers = {};
+  selectedWord = null;
+  buildWordBank();
+  buildSlots();
+  document.getElementById('scoreNum').textContent = '0';
+  document.getElementById('result').classList.remove('show');
+}
+
+function submitBonus() {
+  const b1 = document.getElementById('b1').value.trim();
+  const b2 = document.getElementById('b2').value.trim();
+  const b3 = document.getElementById('b3').value.trim();
+  if (!b1 || !b2 || !b3) { alert('Please answer all 3 bonus questions!'); return; }
+  document.getElementById('bonusFeedback').style.display = 'block';
+}
+
+buildWordBank();
+buildSlots();
+</script>
+</body>
+</html>
