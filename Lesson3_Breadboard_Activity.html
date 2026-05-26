@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 3 — Breadboard & Arduino Activity</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#065A82;--teal:#1C7293;--gold:#f59e0b;--green:#22c55e;--red:#ef4444;--dark:#021B33;--bg:#f0f7ff;--white:#ffffff;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:#1a1a2e;min-height:100vh;}
+header{background:linear-gradient(135deg,var(--blue),var(--teal));color:white;padding:18px 24px;display:flex;align-items:center;gap:16px;box-shadow:0 4px 20px rgba(0,0,0,0.15);}
+.logo{background:white;color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:13px;font-weight:900;padding:8px 10px;border-radius:8px;}
+header h1{font-size:19px;font-weight:900;}
+header p{font-size:12px;opacity:.85;margin-top:2px;}
+.score-pill{margin-left:auto;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);border-radius:50px;padding:8px 18px;text-align:center;}
+.score-pill .num{font-family:'Share Tech Mono',monospace;font-size:24px;font-weight:700;}
+.score-pill .lbl{font-size:10px;opacity:.8;text-transform:uppercase;letter-spacing:1px;}
+main{max-width:960px;margin:0 auto;padding:24px 16px 60px;}
+
+/* STUDENT FORM */
+.student-form{background:white;border:2px solid var(--blue);border-radius:16px;padding:22px;margin-bottom:22px;box-shadow:0 4px 16px rgba(6,90,130,.1);}
+.form-title{font-size:12px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group.full{grid-column:1/-1;}
+.form-group label{font-size:11px;font-weight:800;color:var(--teal);text-transform:uppercase;letter-spacing:1px;}
+.form-group input,.form-group select{border:2px solid #dde8f0;border-radius:10px;padding:9px 13px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:600;outline:none;transition:border-color .2s;background:#f8fbff;}
+.form-group input:focus,.form-group select:focus{border-color:var(--blue);background:white;}
+
+/* SECTIONS */
+.section{background:white;border:1px solid #dde8f0;border-radius:16px;margin-bottom:22px;overflow:hidden;}
+.section-hdr{background:linear-gradient(90deg,#0f2744,#0d1e3d);padding:14px 22px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #1e3a5f;}
+.section-num{background:var(--blue);color:white;font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:700;padding:4px 10px;border-radius:6px;}
+.section-title{font-family:'Share Tech Mono',monospace;font-size:13px;color:#93c5fd;letter-spacing:.5px;}
+.section-body{padding:22px;}
+
+/* MCQ */
+.mcq-q{margin-bottom:26px;}
+.mcq-text{font-size:15px;font-weight:700;margin-bottom:10px;color:#1a1a2e;}
+.mcq-num{color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:12px;}
+.options{display:grid;gap:7px;}
+.option{background:#f8fbff;border:2px solid #dde8f0;border-radius:10px;padding:10px 14px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:10px;font-size:14px;}
+.option:hover:not(.locked){border-color:var(--blue);background:#eef6ff;transform:translateX(4px);}
+.option.selected{border-color:var(--blue);background:rgba(6,90,130,.1);}
+.option.correct{border-color:var(--green);background:rgba(34,197,94,.08);color:#166534;}
+.option.wrong{border-color:var(--red);background:rgba(239,68,68,.07);color:#991b1b;}
+.opt-letter{width:28px;height:28px;background:#dde8f0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0;font-family:'Share Tech Mono',monospace;}
+.option.correct .opt-letter{background:var(--green);color:white;}
+.option.wrong .opt-letter{background:var(--red);color:white;}
+
+/* MATCHING */
+.match-intro{font-size:13px;color:#666;font-style:italic;margin-bottom:14px;}
+.match-pair{display:grid;grid-template-columns:1fr 60px 1fr;gap:6px;align-items:center;margin-bottom:8px;}
+.match-left,.match-right{border:2px solid #dde8f0;border-radius:10px;padding:10px 13px;font-size:13px;cursor:pointer;transition:all .2s;min-height:46px;display:flex;align-items:center;}
+.match-left{border-left:4px solid var(--blue);color:#1e3a5f;background:#f0f7ff;}
+.match-right{border-left:4px solid var(--gold);color:#5c3900;background:#fffbf0;}
+.match-left.sel{background:rgba(6,90,130,.15);box-shadow:0 0 0 2px var(--blue);}
+.match-right.sel{background:rgba(245,158,11,.12);}
+.match-left.matched,.match-right.matched{border-color:var(--green);background:rgba(34,197,94,.08);color:#166534;}
+.match-arrow{text-align:center;color:#aaa;font-size:18px;}
+.match-arrow.ok{color:var(--green);}
+
+/* SAFETY TRUE/FALSE */
+.tf-q{background:#f8fbff;border:1px solid #dde8f0;border-radius:10px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.tf-text{font-size:14px;font-weight:600;flex:1;}
+.tf-btns{display:flex;gap:8px;flex-shrink:0;}
+.tf-btn{padding:7px 16px;border:2px solid #dde8f0;border-radius:8px;cursor:pointer;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;transition:all .2s;background:white;}
+.tf-btn:hover:not(.locked){transform:translateY(-1px);}
+.tf-btn.true-btn:hover:not(.locked){border-color:var(--green);color:var(--green);}
+.tf-btn.false-btn:hover:not(.locked){border-color:var(--red);color:var(--red);}
+.tf-btn.correct{background:var(--green);color:white;border-color:var(--green);}
+.tf-btn.wrong{background:var(--red);color:white;border-color:var(--red);}
+.tf-btn.dim{opacity:.35;}
+
+/* SHORT ANSWER */
+.short-q{margin-bottom:18px;}
+.short-q label{display:block;font-size:14px;font-weight:700;color:#1a1a2e;margin-bottom:8px;}
+.short-q textarea{width:100%;background:#f8fbff;border:2px solid #dde8f0;border-radius:10px;padding:10px 14px;font-family:'Nunito',sans-serif;font-size:13px;resize:vertical;min-height:65px;outline:none;transition:border-color .2s;}
+.short-q textarea:focus{border-color:var(--blue);}
+
+/* BUTTONS */
+.btn-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:10px;}
+.btn{background:var(--blue);color:white;border:none;border-radius:10px;padding:12px 28px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s;box-shadow:0 4px 12px rgba(6,90,130,.3);}
+.btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(6,90,130,.4);}
+.btn.sec{background:white;color:var(--teal);border:2px solid var(--teal);box-shadow:none;}
+.btn.sec:hover{background:var(--teal);color:white;}
+.btn.go{background:#16a34a;}
+.btn.go:hover{background:#15803d;}
+
+.status{text-align:center;margin-top:14px;padding:13px 18px;border-radius:10px;font-size:14px;font-weight:700;display:none;}
+.status.sending{background:#fff8e7;color:#7d5a00;border:1px solid var(--gold);display:block;}
+.status.sent{background:#f0fff4;color:#166534;border:1px solid var(--green);display:block;}
+.status.error{background:#fff5f5;color:#991b1b;border:1px solid var(--red);display:block;}
+
+.result{display:none;background:white;border:2px solid var(--blue);border-radius:16px;padding:28px;text-align:center;margin-top:22px;}
+.result.show{display:block;animation:pop .4s ease;}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+.result-score{font-family:'Share Tech Mono',monospace;font-size:52px;color:var(--blue);margin:8px 0;}
+.result-msg{font-size:17px;font-weight:800;margin-top:8px;}
+.result-details{background:#f0f7ff;border-radius:10px;padding:14px;margin-top:14px;text-align:left;font-size:13px;line-height:2;}
+.result-details span{font-weight:800;color:var(--blue);}
+@media(max-width:640px){.form-grid{grid-template-columns:1fr}.match-pair{grid-template-columns:1fr}.match-arrow{display:none}.tf-q{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">L3</div>
+  <div>
+    <h1>Lesson 3 — Arduino UNO Complete + Breadboard</h1>
+    <p>Fill in your details, complete all sections, then submit to your teacher</p>
+  </div>
+  <div class="score-pill">
+    <div class="num" id="scoreNum">0</div>
+    <div class="lbl">Score</div>
+  </div>
+</header>
+
+<main>
+  <!-- STUDENT DETAILS -->
+  <div class="student-form">
+    <div class="form-title">📋 Step 1 — Enter Your Details</div>
+    <div class="form-grid">
+      <div class="form-group full"><label>🏫 School Name *</label><input type="text" id="school" placeholder="e.g. Kitale High School"/></div>
+      <div class="form-group"><label>👤 Full Name *</label><input type="text" id="studentName" placeholder="e.g. Jane Wanjiru"/></div>
+      <div class="form-group"><label>🏆 Group / Team *</label><input type="text" id="group" placeholder="e.g. Pioneers"/></div>
+      <div class="form-group"><label>📚 Class / Grade *</label>
+        <select id="grade"><option value="">-- Select --</option><option>Grade 4</option><option>Grade 5</option><option>Grade 6</option><option>Grade 7</option><option>Grade 8</option><option>Grade 9</option><option>Form 1</option><option>Form 2</option><option>Form 3</option><option>Form 4</option><option>Other</option></select>
+      </div>
+      <div class="form-group"><label>📅 Date *</label><input type="date" id="dateField"/></div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: MCQ -->
+  <div class="section">
+    <div class="section-hdr"><span class="section-num">01</span><span class="section-title">MULTIPLE CHOICE — Arduino UNO Parts & Breadboard</span></div>
+    <div class="section-body" id="mcqBody"></div>
+    <div style="padding:0 22px 22px"><div class="btn-row"><button class="btn" onclick="checkMCQ()">CHECK ANSWERS</button><button class="btn sec" onclick="resetMCQ()">RESET</button></div></div>
+  </div>
+
+  <!-- SECTION 2: MATCHING -->
+  <div class="section">
+    <div class="section-hdr"><span class="section-num">02</span><span class="section-title">MATCH — Breadboard Part to Description</span></div>
+    <div class="section-body">
+      <p class="match-intro">Click a blue item on the left, then click its matching gold description on the right.</p>
+      <div id="matchBody"></div>
+      <div class="btn-row" style="margin-top:14px"><button class="btn" onclick="checkMatch()">CHECK MATCHES</button><button class="btn sec" onclick="resetMatch()">RESET</button></div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: SAFETY TRUE/FALSE -->
+  <div class="section">
+    <div class="section-hdr"><span class="section-num">03</span><span class="section-title">SAFETY — TRUE or FALSE?</span></div>
+    <div class="section-body" id="tfBody"></div>
+    <div style="padding:0 22px 22px"><div class="btn-row"><button class="btn" onclick="checkTF()">CHECK ANSWERS</button><button class="btn sec" onclick="resetTF()">RESET</button></div></div>
+  </div>
+
+  <!-- SECTION 4: SHORT ANSWER -->
+  <div class="section">
+    <div class="section-hdr"><span class="section-num">04</span><span class="section-title">SHORT ANSWER — Write in your own words</span></div>
+    <div class="section-body">
+      <div class="short-q"><label>1. What is a breadboard and why do we use it?</label><textarea id="sa1" placeholder="Write your answer here..."></textarea></div>
+      <div class="short-q"><label>2. Explain what PWM means and give one example of how it is used.</label><textarea id="sa2" placeholder="Write your answer here..."></textarea></div>
+      <div class="short-q"><label>3. What is the Golden Safety Rule before powering any circuit?</label><textarea id="sa3" placeholder="Write your answer here..."></textarea></div>
+    </div>
+  </div>
+
+  <!-- SUBMIT -->
+  <div class="btn-row">
+    <button class="btn go" onclick="submitAll()">📤 SUBMIT TO TEACHER</button>
+    <button class="btn sec" onclick="resetAll()">🔄 RESET ALL</button>
+  </div>
+  <div class="status" id="statusEl"></div>
+
+  <!-- RESULT -->
+  <div class="result" id="resultCard">
+    <div style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:1px">Your Score</div>
+    <div class="result-score" id="resultScore">—</div>
+    <div class="result-msg" id="resultMsg"></div>
+    <div class="result-details" id="resultDetails"></div>
+    <p style="color:#888;font-size:12px;margin-top:12px">✅ Submitted to your teacher!</p>
+  </div>
+</main>
+
+<script>
+const SHEET="https://script.google.com/macros/s/AKfycbyA3ZkQRoWb7nbVYku6RVpIrTvIrZsGhxuxfXadikglkK7aJqKIRtQ_s6MwQSzVo--B/exec";
+
+// ── MCQ DATA ──────────────────────────────────────────────────────────────────
+const mcqs=[
+  {q:"What does the green 'ON' LED on the Arduino board indicate?",opts:["The code is running","The board is receiving power","The simulation has started","Pin 13 is active"],ans:1},
+  {q:"Which pins on the Arduino UNO support PWM output?",opts:["Pins 0, 1, 2, 3, 4, 5","Pins A0–A5","Pins 3, 5, 6, 9, 10, 11 (marked ~)","Pins 7–13 only"],ans:2},
+  {q:"What command is used to produce PWM output in Arduino code?",opts:["digitalWrite()","pwmWrite()","analogWrite()","analogRead()"],ans:2},
+  {q:"In a breadboard, which holes are internally connected?",opts:["All holes in the same column number","All holes in the same row number on the same side","All holes across the centre gap","All holes on the board"],ans:1},
+  {q:"What is the purpose of the red (+) power rail on a breadboard?",opts:["It is only decorative","It connects all its holes to distribute 5V","It is used for ground connections","It stores electricity"],ans:1},
+  {q:"What resistor value should ALWAYS be used in series with an LED?",opts:["10Ω","1000Ω","47Ω","220Ω"],ans:3},
+  {q:"Which wire colour convention connects Arduino GND to the breadboard?",opts:["Red wire","Yellow wire","Black wire","Green wire"],ans:2},
+  {q:"What does TX stand for on the Arduino UNO?",opts:["Transfer X","Transmit — sends data","Text Exchange","Terminal X"],ans:1},
+  {q:"What should you NEVER do while modifying a breadboard circuit?",opts:["Use jumper wires","Have the power connected","Use a resistor","Check your connections"],ans:1},
+  {q:"What is the centre gap on a breadboard used for?",opts:["Decoration only","To separate power rails","To fit IC chips across and separate left from right sides","To add extra ground connections"],ans:2},
+];
+
+// ── MATCH DATA ────────────────────────────────────────────────────────────────
+const matchData=[
+  {part:"Terminal Strip",fn:"Main area — rows of 5 holes connected internally"},
+  {part:"Power Rail (+)",fn:"Distributes 5V across the whole board"},
+  {part:"Power Rail (–)",fn:"Distributes GND across the whole board"},
+  {part:"Centre Gap",fn:"Separates left (A–E) from right (F–J) sides"},
+  {part:"Row Number",fn:"Holes with the same number on same side are connected"},
+  {part:"PWM Pin (~)",fn:"Can simulate analog output using pulse width modulation"},
+  {part:"TX Pin (1)",fn:"Transmits serial data from Arduino to computer"},
+  {part:"ICSP Header",fn:"Used to program chips directly — leave alone for now"},
+];
+
+// ── TRUE/FALSE DATA ───────────────────────────────────────────────────────────
+const tfData=[
+  {text:"You should always connect power BEFORE finishing your circuit.",ans:false},
+  {text:"A resistor must always be placed in series with an LED to protect it.",ans:true},
+  {text:"Inserting both legs of an LED in the same breadboard row is safe.",ans:false},
+  {text:"The long leg of an LED is the anode (+) and connects toward positive voltage.",ans:true},
+  {text:"PWM pins can only output either 0V or 5V — no values in between.",ans:false},
+  {text:"The green ON LED lights up whenever the Arduino board has power.",ans:true},
+  {text:"It is safe to connect Arduino 5V directly to GND with no components in between.",ans:false},
+  {text:"All holes along the red (+) power rail of a breadboard are connected together.",ans:true},
+];
+
+let mcqAnswers={}, matchLeft=null, matchPairs={}, tfAnswers={};
+
+document.getElementById('dateField').valueAsDate=new Date();
+
+// ── BUILD MCQ ──────────────────────────────────────────────────────────────────
+function buildMCQ(){
+  const c=document.getElementById('mcqBody');
+  c.innerHTML='';
+  mcqAnswers={};
+  mcqs.forEach((q,qi)=>{
+    const d=document.createElement('div');
+    d.className='mcq-q';
+    d.innerHTML=`<div class="mcq-text"><span class="mcq-num">${qi+1}. </span>${q.q}</div>
+    <div class="options">${q.opts.map((o,oi)=>`<div class="option" id="opt${qi}_${oi}" onclick="selOpt(${qi},${oi})"><span class="opt-letter">${String.fromCharCode(65+oi)}</span>${o}</div>`).join('')}</div>`;
+    c.appendChild(d);
+  });
+}
+function selOpt(qi,oi){
+  if(document.getElementById(`opt${qi}_0`).classList.contains('locked'))return;
+  [0,1,2,3].forEach(x=>{const e=document.getElementById(`opt${qi}_${x}`);if(e)e.classList.remove('selected');});
+  document.getElementById(`opt${qi}_${oi}`).classList.add('selected');
+  mcqAnswers[qi]=oi;
+}
+function checkMCQ(){
+  let sc=0;
+  mcqs.forEach((q,qi)=>{
+    [0,1,2,3].forEach(oi=>{
+      const e=document.getElementById(`opt${qi}_${oi}`);if(!e)return;
+      e.classList.add('locked');
+      if(oi===q.ans)e.classList.add('correct');
+      else if(mcqAnswers[qi]===oi)e.classList.add('wrong');
+    });
+    if(mcqAnswers[qi]===q.ans)sc++;
+  });
+  updateScore();
+  alert(`Section 1: ${sc}/${mcqs.length} correct!`);
+}
+function resetMCQ(){buildMCQ();}
+
+// ── BUILD MATCH ───────────────────────────────────────────────────────────────
+function buildMatch(){
+  matchPairs={};matchLeft=null;
+  const shuffled=[...matchData.map(m=>m.fn)].sort(()=>Math.random()-.5);
+  const c=document.getElementById('matchBody');
+  c.innerHTML='';
+  matchData.forEach((item,i)=>{
+    const row=document.createElement('div');
+    row.className='match-pair';
+    row.innerHTML=`
+      <div class="match-left" id="ml${i}" onclick="selLeft(${i})">${item.part}</div>
+      <div class="match-arrow" id="ma${i}">→</div>
+      <div class="match-right" id="mr${i}" data-fn="${shuffled[i]}" onclick="selRight(${i})">${shuffled[i]}</div>`;
+    c.appendChild(row);
+  });
+}
+function selLeft(i){
+  if(document.getElementById('ml'+i).classList.contains('matched'))return;
+  document.querySelectorAll('.match-left').forEach(e=>e.classList.remove('sel'));
+  matchLeft=i;
+  document.getElementById('ml'+i).classList.add('sel');
+}
+function selRight(i){
+  if(matchLeft===null){alert('Click a blue item on the left first!');return;}
+  if(document.getElementById('mr'+i).classList.contains('matched'))return;
+  matchPairs[matchLeft]=document.getElementById('mr'+i).dataset.fn;
+  document.getElementById('ml'+matchLeft).dataset.pairedRight=i;
+  document.getElementById('ml'+matchLeft).classList.remove('sel');
+  document.getElementById('ma'+matchLeft).textContent='⟷';
+  matchLeft=null;
+  updateScore();
+}
+function checkMatch(){
+  let sc=0;
+  matchData.forEach((item,i)=>{
+    if(matchPairs[i]===item.fn){
+      document.getElementById('ml'+i).classList.add('matched');
+      const ri=document.getElementById('ml'+i).dataset.pairedRight;
+      if(ri!==undefined){document.getElementById('mr'+ri).classList.add('matched');document.getElementById('ma'+i).classList.add('ok');}
+      sc++;
+    }
+  });
+  updateScore();
+  alert(`Section 2: ${sc}/${matchData.length} correct!`);
+}
+function resetMatch(){buildMatch();}
+
+// ── BUILD TRUE/FALSE ──────────────────────────────────────────────────────────
+function buildTF(){
+  const c=document.getElementById('tfBody');
+  c.innerHTML='';
+  tfAnswers={};
+  tfData.forEach((item,i)=>{
+    const d=document.createElement('div');
+    d.className='tf-q';
+    d.innerHTML=`<div class="tf-text"><span style="color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:12px">${i+1}.</span> ${item.text}</div>
+    <div class="tf-btns">
+      <button class="tf-btn true-btn" id="tf${i}_T" onclick="selTF(${i},true)">TRUE</button>
+      <button class="tf-btn false-btn" id="tf${i}_F" onclick="selTF(${i},false)">FALSE</button>
+    </div>`;
+    c.appendChild(d);
+  });
+}
+function selTF(i,val){
+  const tBtn=document.getElementById(`tf${i}_T`), fBtn=document.getElementById(`tf${i}_F`);
+  if(tBtn.classList.contains('correct')||tBtn.classList.contains('wrong'))return;
+  tBtn.classList.remove('correct','wrong','dim');fBtn.classList.remove('correct','wrong','dim');
+  if(val){tBtn.style.borderColor='var(--blue)';tBtn.style.color='var(--blue)';fBtn.classList.add('dim');}
+  else{fBtn.style.borderColor='var(--blue)';fBtn.style.color='var(--blue)';tBtn.classList.add('dim');}
+  tfAnswers[i]=val;
+}
+function checkTF(){
+  let sc=0;
+  tfData.forEach((item,i)=>{
+    const tBtn=document.getElementById(`tf${i}_T`), fBtn=document.getElementById(`tf${i}_F`);
+    tBtn.classList.add('locked');fBtn.classList.add('locked');
+    tBtn.style='';fBtn.style='';tBtn.classList.remove('dim');fBtn.classList.remove('dim');
+    const userAns=tfAnswers[i];
+    if(userAns===undefined)return;
+    if(userAns===item.ans){
+      (userAns?tBtn:fBtn).classList.add('correct');
+      sc++;
+    } else {
+      (userAns?tBtn:fBtn).classList.add('wrong');
+      (item.ans?tBtn:fBtn).classList.add('correct');
+    }
+  });
+  updateScore();
+  alert(`Section 3: ${sc}/${tfData.length} correct!`);
+}
+function resetTF(){buildTF();}
+
+// ── SCORE ──────────────────────────────────────────────────────────────────────
+function updateScore(){
+  let sc=0;
+  mcqs.forEach((q,qi)=>{if(mcqAnswers[qi]===q.ans)sc++;});
+  matchData.forEach((item,i)=>{if(matchPairs[i]===item.fn)sc++;});
+  tfData.forEach((item,i)=>{if(tfAnswers[i]===item.ans)sc++;});
+  document.getElementById('scoreNum').textContent=sc;
+}
+
+// ── VALIDATE ───────────────────────────────────────────────────────────────────
+function validateForm(){
+  const fields=[{id:'school',label:'School Name'},{id:'studentName',label:'Full Name'},{id:'group',label:'Group / Team'},{id:'grade',label:'Class / Grade'},{id:'dateField',label:'Date'}];
+  for(const f of fields){
+    if(!document.getElementById(f.id).value.trim()){alert('Please fill in: '+f.label);document.getElementById(f.id).focus();return false;}
+  }
+  return true;
+}
+
+// ── SUBMIT ──────────────────────────────────────────────────────────────────────
+function submitAll(){
+  if(!validateForm())return;
+  let mcqSc=0,matchSc=0,tfSc=0;
+  mcqs.forEach((q,qi)=>{if(mcqAnswers[qi]===q.ans)mcqSc++;});
+  matchData.forEach((item,i)=>{if(matchPairs[i]===item.fn)matchSc++;});
+  tfData.forEach((item,i)=>{if(tfAnswers[i]===item.ans)tfSc++;});
+  const total=mcqs.length+matchData.length+tfData.length;
+  const score=mcqSc+matchSc+tfSc;
+
+  const payload={
+    school:   document.getElementById('school').value.trim(),
+    name:     document.getElementById('studentName').value.trim(),
+    group:    document.getElementById('group').value.trim(),
+    grade:    document.getElementById('grade').value,
+    date:     document.getElementById('dateField').value,
+    score,total,
+    answers:  `MCQ:${mcqSc}/${mcqs.length} | Match:${matchSc}/${matchData.length} | T/F:${tfSc}/${tfData.length}`,
+    bonus1:   document.getElementById('sa1').value.trim()||'—',
+    bonus2:   document.getElementById('sa2').value.trim()||'—',
+    bonus3:   document.getElementById('sa3').value.trim()||'—',
+  };
+
+  const st=document.getElementById('statusEl');
+  st.className='status sending';st.textContent='⏳ Sending to your teacher...';
+
+  fetch(SHEET,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(()=>{
+      st.className='status sent';st.textContent='✅ Submitted! Your teacher can now see your results.';
+      showResult(score,total,payload);
+    })
+    .catch(()=>{st.className='status error';st.textContent='❌ Failed — check internet and try again.';});
+}
+
+function showResult(score,total,d){
+  const pct=Math.round(score/total*100);
+  document.getElementById('resultScore').textContent=`${score} / ${total}`;
+  const msg=pct===100?'🌟 PERFECT SCORE!':pct>=80?'🎉 Excellent work!':pct>=60?'👍 Good job!':'💪 Keep studying!';
+  const msgEl=document.getElementById('resultMsg');
+  msgEl.textContent=msg;
+  msgEl.style.color=pct>=80?'#166534':pct>=60?'#7d5a00':'#991b1b';
+  document.getElementById('resultDetails').innerHTML=`
+    <div>👤 <span>Name:</span> ${d.name}</div>
+    <div>🏫 <span>School:</span> ${d.school}</div>
+    <div>🏆 <span>Group:</span> ${d.group}</div>
+    <div>📚 <span>Grade:</span> ${d.grade}</div>
+    <div>📅 <span>Date:</span> ${d.date}</div>
+    <div>🎯 <span>Score:</span> ${score} / ${total} (${pct}%)</div>`;
+  const r=document.getElementById('resultCard');
+  r.classList.add('show');r.scrollIntoView({behavior:'smooth'});
+}
+
+function resetAll(){
+  mcqAnswers={};matchPairs={};matchLeft=null;tfAnswers={};
+  buildMCQ();buildMatch();buildTF();
+  document.getElementById('scoreNum').textContent='0';
+  document.getElementById('resultCard').classList.remove('show');
+  document.getElementById('statusEl').className='status';
+  ['sa1','sa2','sa3'].forEach(id=>document.getElementById(id).value='');
+}
+
+buildMCQ();buildMatch();buildTF();
+</script>
+</body>
+</html>
